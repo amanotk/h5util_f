@@ -41,10 +41,12 @@ module h5util
   interface h5util_put_attribute
      module procedure &
           & put_attribute_char,&
-          & put_attribute_int,&
+          & put_attribute_i4, &
+          & put_attribute_i8, &
           & put_attribute_r4, &
           & put_attribute_r8, &
-          & put_attribute_arr_int,&
+          & put_attribute_arr_i4, &
+          & put_attribute_arr_i8, &
           & put_attribute_arr_r4, &
           & put_attribute_arr_r8
   end interface h5util_put_attribute
@@ -62,7 +64,8 @@ module h5util
   ! write global dataset
   interface h5util_write_dataset
      module procedure &
-          & write_dataset_int,&
+          & write_dataset_i4, &
+          & write_dataset_i8, &
           & write_dataset_r4, &
           & write_dataset_r8
   end interface h5util_write_dataset
@@ -183,13 +186,13 @@ contains
   end subroutine put_attribute_char
 
   !
-  ! put scalar integer attribute
+  ! put scalar integer(4) attribute
   !
-  subroutine put_attribute_int(dest, name, data)
+  subroutine put_attribute_i4(dest, name, data)
     implicit none
     integer(hid_t), intent(in)   :: dest
     character(len=*), intent(in) :: name
-    integer, intent(in)          :: data
+    integer(4), intent(in)       :: data
 
     integer(hid_t) :: scalar, attr, type
     integer(hsize_t) :: dims(1)
@@ -205,7 +208,32 @@ contains
     call h5sclose_f(scalar, hdferr)
     call h5aclose_f(attr, hdferr)
 
-  end subroutine put_attribute_int
+  end subroutine put_attribute_i4
+
+  !
+  ! put scalar integer(8) attribute
+  !
+  subroutine put_attribute_i8(dest, name, data)
+    implicit none
+    integer(hid_t), intent(in)   :: dest
+    character(len=*), intent(in) :: name
+    integer(8), intent(in)       :: data
+
+    integer(hid_t) :: scalar, attr, type
+    integer(hsize_t) :: dims(1)
+
+    type = H5T_NATIVE_INTEGER
+
+    call h5screate_f(H5S_SCALAR_F, scalar, hdferr)
+    call h5acreate_f(dest, name, type, scalar, attr, hdferr, &
+         & H5P_DEFAULT_F, H5P_DEFAULT_F)
+
+    call h5awrite_f(attr, type, data, dims, hdferr)
+
+    call h5sclose_f(scalar, hdferr)
+    call h5aclose_f(attr, hdferr)
+
+  end subroutine put_attribute_i8
 
   !
   ! put scalar real(4) attribute
@@ -258,13 +286,13 @@ contains
   end subroutine put_attribute_r8
 
   !
-  ! put array integer attribute
+  ! put array integer(4) attribute
   !
-  subroutine put_attribute_arr_int(dest, name, data)
+  subroutine put_attribute_arr_i4(dest, name, data)
     implicit none
     integer(hid_t), intent(in)   :: dest
     character(len=*), intent(in) :: name
-    integer, intent(in)          :: data(:)
+    integer(4), intent(in)       :: data(:)
 
     integer(hid_t) :: array, attr, type
     integer(hsize_t) :: dims(1)
@@ -281,7 +309,33 @@ contains
     call h5sclose_f(array, hdferr)
     call h5aclose_f(attr, hdferr)
 
-  end subroutine put_attribute_arr_int
+  end subroutine put_attribute_arr_i4
+
+  !
+  ! put array integer(8) attribute
+  !
+  subroutine put_attribute_arr_i8(dest, name, data)
+    implicit none
+    integer(hid_t), intent(in)   :: dest
+    character(len=*), intent(in) :: name
+    integer(8), intent(in)       :: data(:)
+
+    integer(hid_t) :: array, attr, type
+    integer(hsize_t) :: dims(1)
+
+    type = H5T_NATIVE_INTEGER
+    dims(1) = size(data)
+
+    call h5screate_simple_f(1, dims, array, hdferr)
+    call h5acreate_f(dest, name, type, array, attr, hdferr, &
+         & H5P_DEFAULT_F, H5P_DEFAULT_F)
+
+    call h5awrite_f(attr, type, data, dims, hdferr)
+
+    call h5sclose_f(array, hdferr)
+    call h5aclose_f(attr, hdferr)
+
+  end subroutine put_attribute_arr_i8
 
   !
   ! put array integer attribute
@@ -400,7 +454,7 @@ contains
   !
   ! write integer global array
   !
-  subroutine write_dataset_int(dest, name, rank, dims, count, &
+  subroutine write_dataset_i4(dest, name, rank, dims, count, &
        & loffset, goffset, data)
     implicit none
     integer(hid_t), intent(in)   :: dest
@@ -410,7 +464,7 @@ contains
     integer(hsize_t), intent(in) :: goffset(rank)
     integer(hsize_t), intent(in) :: loffset(rank)
     integer(hsize_t), intent(in) :: count(rank)
-    integer, intent(in)          :: data(:)
+    integer(4), intent(in)       :: data(:)
 
     integer(hid_t) :: dataset, dspace, mspace, mpio
 
@@ -435,7 +489,47 @@ contains
     call h5sclose_f(mspace, hdferr)
     call h5dclose_f(dataset, hdferr)
 
-  end subroutine write_dataset_int
+  end subroutine write_dataset_i4
+
+  !
+  ! write integer global array
+  !
+  subroutine write_dataset_i8(dest, name, rank, dims, count, &
+       & loffset, goffset, data)
+    implicit none
+    integer(hid_t), intent(in)   :: dest
+    character(len=*), intent(in) :: name
+    integer, intent(in)          :: rank
+    integer(hsize_t), intent(in) :: dims(rank)
+    integer(hsize_t), intent(in) :: goffset(rank)
+    integer(hsize_t), intent(in) :: loffset(rank)
+    integer(hsize_t), intent(in) :: count(rank)
+    integer(8), intent(in)       :: data(:)
+
+    integer(hid_t) :: dataset, dspace, mspace, mpio
+
+    call h5dopen_f(dest, name, dataset, hdferr, H5P_DEFAULT_F)
+    call h5dget_space_f(dataset, dspace, hdferr)
+    call h5screate_simple_f(rank, dims, mspace, hdferr)
+    call h5pcreate_f(H5P_DATASET_XFER_F, mpio, hdferr)
+
+    ! destination hyperslab
+    call h5sselect_hyperslab_f(dspace, H5S_SELECT_SET_F, goffset, count, hdferr)
+
+    ! source hyperslab
+    call h5sselect_hyperslab_f(mspace, H5S_SELECT_SET_F, loffset, count, hdferr)
+
+    ! write
+    call h5pset_dxpl_mpio_f(mpio, H5FD_MPIO_COLLECTIVE_F, hdferr)
+    call h5dwrite_f(dataset, H5T_NATIVE_INTEGER, data, dims, hdferr, &
+         & mspace, dspace, mpio)
+
+    call h5pclose_f(mpio, hdferr)
+    call h5sclose_f(dspace, hdferr)
+    call h5sclose_f(mspace, hdferr)
+    call h5dclose_f(dataset, hdferr)
+
+  end subroutine write_dataset_i8
 
   !
   ! write real(4) global array
